@@ -1,32 +1,99 @@
-# Prerequisites
-*.d
+#include "connexion.h"
+#include "ui_connexion.h"
+#include "pageaccueil.h"
+#include <pageaccueilop.h>
+#include <QtSql/QSqlDatabase>
+#include <QMessageBox>
+#include<QSqlQuery>
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
 
-# Precompiled Headers
-*.gch
-*.pch
+Connexion::Connexion(QWidget *parent) :
+    QMainWindow(parent),
+    ui(new Ui::Connexion)
+{
+    ui->setupUi(this);
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+    // Masquer le mot de passe
+    ui->lineEdit_mdp->setEchoMode(QLineEdit::Password);
 
-# Fortran module files
-*.mod
-*.smod
+    // Configurer la connexion à la base de données MySQL via le connecteur ODBC
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+        QSqlDatabase leDB = QSqlDatabase::addDatabase("QODBC");
 
-# Executables
-*.exe
-*.out
-*.app
+         leDB.setHostName("127.0.0.1");
+         leDB.setDatabaseName("lecteurencodeurdatabase");
+         leDB.setPort(3306);
+         leDB.setUserName("cheikh");
+         leDB.setPassword("cheikh");
+     // Ouvrir la base de données
+         leDB.open();
+
+}
+
+Connexion::~Connexion()
+{
+    delete ui;
+
+}
+
+void Connexion::on_pushButton_valider_clicked()
+{
+                      // Préparer la requete SQL
+             QSqlQuery sql ;
+
+                       sql.prepare("select * from authentificationdatabase where Login=:login");
+                       sql.bindValue(":login",ui->lineEdit_login->text());
+
+                       // Exécuter la requete SQL
+                       sql.exec();
+
+                       // Initialiser les champs de la table authentification
+                       QString nom;
+                       QString prenom;
+                       QString login;
+                       QString mot_de_passe;
+                       QString type_compte;
+
+                     if (sql.next()){
+                        // Récupérer les champs de la table authentification
+                           nom= sql.value(0).toString();
+                           prenom= sql.value(1).toString();
+                           login= sql.value(2).toString();
+                           mot_de_passe= sql.value(3).toString();
+                           type_compte=sql.value(4).toString();
+
+                        // Pour tester les champs récupérés de la table
+                     ui->textEdit_test->append(nom);
+                     ui->textEdit_test->append(prenom);
+                     ui->textEdit_test->append(mot_de_passe);
+                     ui->textEdit_test->append(login);
+                     ui->textEdit_test->append(type_compte);
+
+
+
+                     // Comparer les identifiants de connexion avec les identifiants renseignés dans la table authentification
+                     if(mot_de_passe==ui->lineEdit_mdp->text()&& login==ui->lineEdit_login->text()&& type_compte=="Administrateur") {
+
+                          //hide();
+                          PageAccueil *pgeacc = new PageAccueil;
+                          pgeacc->show();
+                                                         }
+
+
+
+                     if (mot_de_passe==ui->lineEdit_mdp->text() &&
+                             login==ui->lineEdit_login->text()&& type_compte=="Opérateur") {
+
+                         //hide();
+                         PageAccueilOp *pgeaccop = new PageAccueilOp;
+                         pgeaccop->show();
+                                                        }
+                     }
+
+               // Afficher le message d'erreur en cas de mauvais identifiants
+               else QMessageBox::critical(this, tr("Informations incorrectes"), tr("Vérifiez votre login et/ou votre mot de passe"));
+
+      }
+
+
+
